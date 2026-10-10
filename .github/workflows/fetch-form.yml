@@ -12,12 +12,22 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           mkdir -p tests/fixtures
-          curl -fsSL -A "Mozilla/5.0" -o tests/fixtures/i-360.pdf https://www.uscis.gov/sites/default/files/document/forms/i-360.pdf
-          curl -fsSL -A "Mozilla/5.0" -o tests/fixtures/i-130.pdf https://www.uscis.gov/sites/default/files/document/forms/i-130.pdf || true
+          get() {
+            name=$1
+            url=https://www.uscis.gov/sites/default/files/document/forms/$name
+            curl -fsSL --compressed -o tests/fixtures/$name \
+              -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" \
+              -H "Accept: application/pdf,text/html,*/*;q=0.8" -H "Accept-Language: en-US,en;q=0.9" \
+              -H "Referer: https://www.uscis.gov/" $url && return 0
+            echo "direct failed for $name, trying archive"
+            curl -fsSL -o tests/fixtures/$name "https://web.archive.org/web/2026id_/$url"
+          }
+          get i-360.pdf
+          head -c 8 tests/fixtures/i-360.pdf; echo
           ls -la tests/fixtures
           git rm -q .github/workflows/fetch-form.yml
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add tests/fixtures
-          git commit -m "Add public USCIS example forms as test fixtures"
+          git commit -m "Add public USCIS I-360 as a test fixture"
           git push
