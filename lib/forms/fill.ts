@@ -8,7 +8,7 @@ import type { FillResult, FormField, FormMeta } from "./types";
 // documents. Nothing here is stored: the documents go to the Claude API for
 // this one request and the suggested values come back to the browser.
 
-export const MODEL = "claude-opus-5-5";
+export const MODEL = "claude-haiku-5-5";
 
 export class FillError extends Error {}
 
@@ -39,7 +39,7 @@ async function docxText(data: Buffer): Promise<string> {
     .trim();
 }
 
-async function fileBlock(f: ContextFile): Promise<Anthropic.Beta.BetaContentBlockParam> {
+async function fileBlock(f: ContextFile): Promise<Anthropic.ContentBlockParam> {
   const title = f.name.slice(0, 200);
   if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
     return {
@@ -127,11 +127,9 @@ export async function suggestValues(opts: {
   const fileNames = files.length ? files.map((f) => `- ${f.name}`).join("\n") : "(none)";
 
   const client = new Anthropic();
-  const stream = client.beta.messages.stream({
+  const stream = client.messages.stream({
     model: MODEL,
     max_tokens: 64000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
     output_config: { effort: "high", format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
     system: SYSTEM,
     messages: [
@@ -166,7 +164,7 @@ export async function suggestValues(opts: {
     ],
   });
 
-  let message: Anthropic.Beta.BetaMessage;
+  let message: Anthropic.Message;
   try {
     message = await stream.finalMessage();
   } catch (e) {
