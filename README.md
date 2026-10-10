@@ -51,22 +51,28 @@ downloads the filled PDF (editable, or flattened). Forms can also be filled by
 hand without Claude.
 
 - **What's stored:** only the blank forms and their field lists, in a private
-  Vercel Blob store. Client notes, documents and answers are never saved: the
+  Vercel Blob store. Client notes, documents and answers are never kept: the
   documents go to the Claude API for that one request, and the filled PDF is
-  built in the browser.
+  built in the browser. Client files over 4 MB in total are uploaded from the
+  browser into the store's `staging/` folder, read once by the fill, and
+  deleted when it ends; each fill also deletes anything in `staging/` older
+  than an hour (left by a fill that timed out).
 - **Government PDFs:** USCIS forms are encrypted (empty password) and carry an
   Adobe XFA layer. On upload the form is decrypted, the XFA layer dropped and
   the ordinary form fields kept, with their tooltips as field descriptions.
   Fields the XFA scripts would unlock are kept and unlocked when filled; ink
   signature boxes and barcodes are skipped.
-- **Limits:** Vercel accepts request bodies up to 4.5 MB, so a form PDF and
-  the client files for one fill must each total under 4 MB. Large photos are
-  shrunk in the browser before sending.
+- **Limits:** a form PDF can be up to 4 MB (Vercel caps request bodies at
+  4.5 MB). Client files for one fill can total 20 MB: Claude takes requests up
+  to 32 MB and files are sent base64-encoded alongside the blank form. Without
+  a Blob store (local development) the client files are capped at 4 MB. Large
+  photos are shrunk in the browser before sending.
 
 | File | What it does |
 | --- | --- |
 | `lib/forms/pdf.ts` | Opens (decrypts) a form, lists its fields, fills it (browser and server) |
 | `lib/forms/store.ts` | Form library storage (Vercel Blob, or `.data/` locally) |
+| `lib/forms/staging.ts` | Short-lived staging of large client files for one fill |
 | `lib/forms/fill.ts` | The Claude request that suggests field values |
 | `app/api/forms/` | Library and fill API routes (all require sign-in) |
 

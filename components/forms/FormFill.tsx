@@ -8,7 +8,10 @@ import { CHECKED, type FieldValues, type FillResult, type FormField, type FormMe
 type Phase = "context" | "working" | "review";
 type Show = "all" | "filled" | "claude";
 
-const MAX_BYTES = 4 * 1024 * 1024;
+// Small uploads go through the site (Vercel caps requests at 4.5 MB). Larger
+// ones go straight to the private Blob store and are deleted after the fill.
+const DIRECT_MAX = 4 * 1024 * 1024;
+const STAGED_MAX = 20 * 1024 * 1024;
 const ACCEPT = ".pdf,.docx,.txt,.md,.csv,.eml,image/jpeg,image/png,image/gif,image/webp,image/heic";
 
 function mb(bytes: number) {
@@ -62,6 +65,8 @@ export default function FormFill({ id }: { id: string }) {
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [staging, setStaging] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [values, setValues] = useState<FieldValues>({});
   const [result, setResult] = useState<FillResult | null>(null);
   const [show, setShow] = useState<Show>("all");
@@ -81,6 +86,7 @@ export default function FormFill({ id }: { id: string }) {
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error ?? "Couldn't load the form.");
         setForm(json.form);
+        setStaging(!!json.stagedUploads);
         setFileName(`${json.form.name} - filled`);
       })
       .catch((e) => setLoadError(e.message));
@@ -93,6 +99,7 @@ export default function FormFill({ id }: { id: string }) {
   }, [phase]);
 
   const totalBytes = files.reduce((n, f) => n + f.size, 0);
+  const maxBytes = staging ? STAGED_MAX : DIRECT_MAX;
 
   async function addFiles(list: FileList | null) {
     if (!list) return;
@@ -101,18 +108,52 @@ export default function FormFill({ id }: { id: string }) {
     if (fileInput.current) fileInput.current.value = "";
   }
 
+  /** Uploads the files to staging/ and returns the request for the fill route. */
+  async function stagedRequest(): Promise<RequestInit> {
+    const { upload } = await import("@vercel/blob/client");
+    const folder = `staging/${crypto.randomUUID()}`;
+    setUploading(true);
+    try {
+      const staged = await Promise.all(
+        files.map(async (f) => {
+          const type = f.type || "application/octet-stream";
+          const blob = await upload(`${folder}/${f.name.replace(/[^\w.\- ]+/g, "_")}`, f, {
+            access: "private",
+            handleUploadUrl: "/api/forms/upload",
+            contentType: type,
+            multipart: f.size > 5 * 1024 * 1024,
+          });
+          return { pathname: blob.pathname, name: f.name, type: f.type };
+        }),
+      );
+      return { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notes, staged }) };
+    } catch {
+      throw new Error("The documents couldn't be uploaded. Check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function runClaude() {
     if (!notes.trim() && files.length === 0) return setError("Add some notes about the client or attach their documents first.");
-    if (totalBytes > MAX_BYTES) return setError(`The files add up to ${mb(totalBytes)}; the most the site can send is 4 MB. Remove some or upload smaller copies.`);
+    if (totalBytes > maxBytes) {
+      return setError(`The files add up to ${mb(totalBytes)}; the most Claude can take at once is ${mb(maxBytes)}. Remove some or upload smaller copies.`);
+    }
     setError(null);
     started.current = Date.now();
     setElapsed(0);
     setPhase("working");
-    const body = new FormData();
-    body.set("notes", notes);
-    for (const f of files) body.append("files", f);
     try {
-      const res = await fetch(`/api/forms/${id}/fill`, { method: "POST", body });
+      let init: RequestInit;
+      if (staging && totalBytes > DIRECT_MAX) {
+        init = await stagedRequest();
+      } else {
+        const body = new FormData();
+        body.set("notes", notes);
+        for (const f of files) body.append("files", f);
+        init = { method: "POST", body };
+      }
+      const res = await fetch(`/api/forms/${id}/fill`, init);
       const json = await res.json().catch(() => null);
       if (!res.ok || !json) {
         throw new Error(
@@ -257,7 +298,9 @@ export default function FormFill({ id }: { id: string }) {
                     </button>
                   </li>
                 ))}
-                <li className={totalBytes > MAX_BYTES ? "over" : "muted small"}>Total {mb(totalBytes)} of 4 MB</li>
+                <li className={totalBytes > maxBytes ? "over" : "muted small"}>
+                  Total {mb(totalBytes)} of {mb(maxBytes)}
+                </li>
               </ul>
             )}
             <div className="stack">
@@ -269,7 +312,8 @@ export default function FormFill({ id }: { id: string }) {
               </button>
               <p className="muted small">
                 Notes and documents are sent to Claude (Anthropic&apos;s API) to fill this form. This site doesn&apos;t
-                save them; they&apos;re gone when you leave the page.
+                keep them: large files are held in the firm&apos;s private storage only while Claude reads them, then
+                deleted.
               </p>
             </div>
           </div>
@@ -278,7 +322,7 @@ export default function FormFill({ id }: { id: string }) {
 
       {phase === "working" && (
         <div className="panel working">
-          <h2>Claude is reading the form and the client&apos;s documents…</h2>
+          <h2>{uploading ? "Uploading the client\u2019s documents…" : "Claude is reading the form and the client\u2019s documents…"}</h2>
           <p className="muted">
             Long forms take a few minutes. {elapsed > 0 && `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`}
           </p>
