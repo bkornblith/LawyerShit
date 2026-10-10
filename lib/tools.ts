@@ -10,4 +10,11 @@ export const TOOLS: Tool[] = [
       "Upload a PDF or Word file, enter the client's details, and get back a copy with the client's name, date of birth, A-number, address and signature permanently blacked out.",
     ready: true,
   },
+  {
+    slug: "forms",
+    name: "Fill a form",
+    description:
+      "Keep a library of blank forms such as USCIS petitions. Pick one, add the client's details and documents, and Claude fills it in for you to check and download.",
+    ready: true,
+  },
 ];
