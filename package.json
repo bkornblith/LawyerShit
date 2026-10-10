@@ -1,0 +1,33 @@
+{
+  "name": "lawyer-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/copy-browser-assets.mjs && next dev",
+    "build": "node scripts/copy-browser-assets.mjs && next build",
+    "start": "next start",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/spa": "^1.0.0",
+    "@xmldom/xmldom": "^0.9.12",
+    "jszip": "^3.10.2",
+    "next": "^16.4.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
