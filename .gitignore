@@ -9,3 +9,4 @@ next-env.d.ts
 test-output/
 public/pdfjs/
 public/tesseract/
+.data/

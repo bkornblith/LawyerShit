@@ -136,3 +136,43 @@ textarea { resize: vertical; }
   .content { padding: 1.25rem 1rem 3rem; }
   .topbar { padding: .6rem 1rem; }
 }
+
+/* Form filler */
+.row-between { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.add-form { margin-bottom: 1rem; display: grid; gap: 1rem; max-width: 720px; }
+.drop.slim { padding: 1.25rem 1rem; margin-bottom: 0; }
+.empty { text-align: center; padding: 2.5rem 1rem; }
+.form-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+.form-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
+.form-row-main p { margin: 0 0 .2rem; }
+.form-row-main h2 { margin-bottom: .2rem; }
+.form-row-actions { display: flex; gap: .5rem; flex: none; }
+.btn.danger { color: #a12a2a; }
+.file-list { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .3rem; }
+.file-list li { display: flex; gap: .6rem; align-items: baseline; }
+.file-list li span:first-child { flex: 1; word-break: break-all; }
+.file-list li.over { color: #a12a2a; font-size: .85rem; font-weight: 600; }
+.tight { margin: .3rem 0 .5rem; padding-left: 1.2rem; }
+.fill-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 1rem; align-items: start; margin-top: 1rem; }
+.field-filters { margin-bottom: .75rem; flex-wrap: nowrap; }
+.field-filters select { width: auto; }
+.field-group { margin-bottom: .75rem; }
+.field-group h3 { margin-bottom: .6rem; }
+.page-tag { margin: 0 0 .4rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.field-row { padding: .45rem 0; border-top: 1px solid #efede8; }
+.field-row:first-of-type { border-top: 0; }
+.field-row label { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 280px); gap: .75rem; align-items: center; }
+.field-row .field-label { font-size: .87rem; font-weight: 400; margin: 0; }
+.field-row.kind-checkbox label { grid-template-columns: minmax(0, 1fr) auto; }
+.field-row.kind-checkbox input { width: 18px; height: 18px; }
+.field-row.filled .field-label { color: var(--ink); font-weight: 550; }
+.basis { display: block; font-size: .75rem; color: #2f6b3a; margin-top: .15rem; }
+.download-box { position: sticky; top: 76px; display: grid; gap: .8rem; }
+.download-box .check { margin: 0; }
+@media (max-width: 900px) {
+  .fill-grid { grid-template-columns: 1fr; }
+  .download-box { position: static; order: -1; }
+  .form-row { flex-direction: column; align-items: flex-start; }
+  .field-row label { grid-template-columns: 1fr; gap: .3rem; }
+}
+.review-bar.static { position: static; }
