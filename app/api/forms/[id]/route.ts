@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { stagingAvailable } from "@/lib/forms/staging";
 import { readTemplateUpload, str, withPartner } from "@/lib/forms/api";
 import { deleteForm, getForm, updateForm } from "@/lib/forms/store";
 
@@ -9,7 +10,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   const { id } = await params;
   return withPartner(async () => {
     const form = await getForm(id);
-    return form ? NextResponse.json({ form }) : notFound();
+    return form ? NextResponse.json({ form, stagedUploads: stagingAvailable() }) : notFound();
   });
 }
 
