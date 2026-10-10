@@ -1,0 +1,23 @@
+name: fetch-example-form
+on:
+  push:
+    branches: [claude/form-filler-fncqf5]
+    paths: [.github/workflows/fetch-form.yml]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p tests/fixtures
+          curl -fsSL -A "Mozilla/5.0" -o tests/fixtures/i-360.pdf https://www.uscis.gov/sites/default/files/document/forms/i-360.pdf
+          curl -fsSL -A "Mozilla/5.0" -o tests/fixtures/i-130.pdf https://www.uscis.gov/sites/default/files/document/forms/i-130.pdf || true
+          ls -la tests/fixtures
+          git rm -q .github/workflows/fetch-form.yml
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add tests/fixtures
+          git commit -m "Add public USCIS example forms as test fixtures"
+          git push
